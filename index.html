@@ -2,23 +2,39 @@
 <html lang="th">
 <head>
     <meta charset="UTF-8">
-    <meta name="viewport" content="width=device-width, initial-scale=1.0">
-    <title>Three.js Wheel OOP - Large UI Visualizer</title>
+    <meta name="viewport" content="width=device-width, initial-scale=1.0, maximum-scale=1.0, user-scalable=no">
+    <title>Wheel Responsive UI Visualizer</title>
     <style>
-        body { margin: 0; overflow: hidden; font-family: 'Segoe UI', Tahoma, Geneva, Verdana, sans-serif; background-color: #111; }
+        body { margin: 0; overflow: hidden; font-family: 'Segoe UI', Tahoma, Geneva, Verdana, sans-serif; background-color: #111; touch-action: none; }
         #info {
             position: absolute;
             top: 10px;
             left: 10px;
             color: white;
             background: rgba(0, 0, 0, 0.9);
-            padding: 20px;
+            padding: 15px;
             border-radius: 12px;
             pointer-events: none;
+            width: calc(100% - 40px);
             max-width: 400px;
             border-left: 8px solid #00ff88;
             z-index: 100;
             box-shadow: 0 10px 30px rgba(0,0,0,0.5);
+            transition: all 0.3s ease;
+        }
+        /* ปรับขนาด UI สำหรับจอเล็ก (Mobile) */
+        @media (max-width: 600px) {
+            #info {
+                padding: 10px;
+                top: 5px;
+                left: 5px;
+                width: calc(100% - 30px);
+                max-width: none;
+                border-left-width: 5px;
+            }
+            #info h2 { font-size: 1.1em !important; }
+            .status-badge { font-size: 1.1em !important; padding: 8px !important; }
+            .code-snippet, .prev-code-snippet { font-size: 0.85em !important; padding: 8px !important; }
         }
         .code-snippet {
             color: #ffcc00;
@@ -31,9 +47,10 @@
             font-size: 1.1em;
             font-weight: bold;
             border: 1px solid rgba(255, 204, 0, 0.3);
+            word-break: break-all;
         }
         .prev-code-snippet {
-            color: #ff4444; /* เปลี่ยนเป็นสีแดงตามคำขอ */
+            color: #ff4444;
             font-family: 'Courier New', Courier, monospace;
             display: block;
             margin-top: 8px;
@@ -43,12 +60,13 @@
             font-size: 1em;
             opacity: 0.9;
             border: 1px solid rgba(255, 68, 68, 0.2);
+            word-break: break-all;
         }
         .status-container {
             display: grid;
             grid-template-columns: 1fr 1fr;
-            gap: 15px;
-            margin-top: 10px;
+            gap: 10px;
+            margin-top: 5px;
         }
         .status-badge {
             display: block;
@@ -60,8 +78,8 @@
         }
         .current { background: #00ff88; color: #000; font-weight: bold; }
         .previous { background: #333; color: #aaa; }
-        .label { font-size: 0.85em; color: #aaa; margin-bottom: 4px; text-transform: uppercase; letter-spacing: 1px; }
-        hr { border: 0; border-top: 1px solid #444; margin: 20px 0; }
+        .label { font-size: 0.75em; color: #aaa; margin-bottom: 2px; text-transform: uppercase; letter-spacing: 1px; }
+        hr { border: 0; border-top: 1px solid #444; margin: 15px 0; }
     </style>
 </head>
 <body>
@@ -74,7 +92,7 @@
             <div class="status-badge previous" id="prevY">Prev: 0°</div>
         </div>
 
-        <div class="label" style="margin-top:15px;">Rotation X (Rolling)</div>
+        <div class="label" style="margin-top:10px;">Rotation X (Rolling)</div>
         <div class="status-container">
             <div class="status-badge current" id="currentX">90°</div>
             <div class="status-badge previous" id="prevX">Prev: 90°</div>
@@ -82,10 +100,10 @@
 
         <hr>
         
-        <p style="margin:0; font-size: 0.9em; color: #00ff88; font-weight: bold;">คำสั่งล่าสุด (Current Command):</p>
+        <p style="margin:0; font-size: 0.85em; color: #00ff88; font-weight: bold;">Current Command:</p>
         <span id="lastCommand" class="code-snippet">mesh.rotation.x = Math.PI / 2</span>
         
-        <p style="margin:15px 0 0 0; font-size: 0.9em; color: #ff4444; font-weight: bold;">คำสั่งก่อนหน้า (Previous Command):</p>
+        <p style="margin:10px 0 0 0; font-size: 0.85em; color: #ff4444; font-weight: bold;">Previous Command:</p>
         <span id="prevCommand" class="prev-code-snippet">Unknown</span>
     </div>
 
@@ -108,10 +126,9 @@
                 this.radius = radius;
                 this.group = new THREE.Group();
                 
-                // เก็บค่าเริ่มต้น
                 this.history = { x: Math.PI/2, y: 0 };
-                this.lastCommandText = "mesh.rotation.x = Math.PI / 2"; // ค่าเริ่มต้น
-                this.prevCommandText = "Unknown"; // เริ่มต้นด้วย Unknown ตามคำขอ
+                this.lastCommandText = "mesh.rotation.x = Math.PI / 2";
+                this.prevCommandText = "Unknown";
 
                 const geometry = new THREE.CylinderGeometry(radius, radius, thickness, 32);
                 const material = new THREE.MeshStandardMaterial({ color: 0x222222, roughness: 0.6 });
@@ -132,7 +149,6 @@
                 this.ghost.rotation.x = Math.PI / 2;
                 this.ghost.visible = false;
 
-                // กำหนดสถานะเริ่มต้น
                 this.mesh.rotation.x = Math.PI / 2;
                 this.group.position.y = radius;
                 
@@ -200,8 +216,10 @@
         camera.position.set(3, 3, 3);
         const renderer = new THREE.WebGLRenderer({ antialias: true });
         renderer.setSize(window.innerWidth, window.innerHeight);
+        renderer.setPixelRatio(Math.min(window.devicePixelRatio, 2));
         document.body.appendChild(renderer.domElement);
         const controls = new OrbitControls(camera, renderer.domElement);
+        controls.enableDamping = true;
         
         scene.add(new THREE.GridHelper(10, 20, 0x333333, 0x222222));
         scene.add(new THREE.AmbientLight(0xffffff, 0.6));
@@ -212,6 +230,7 @@
         const myWheel = new Wheel(1, 0.4);
         scene.add(myWheel.group);
 
+        // --- Responsive UI Logic ---
         const gui = new GUI({ title: 'CONTROL PANEL' });
         
         const stepFolder = gui.addFolder('STEP 90 DEGREE');
@@ -233,6 +252,22 @@
         
         gui.add(myWheel, 'reset').name('RESET TO DEFAULT');
 
+        // ฟังก์ชันตรวจจับ Mobile เพื่อซ่อน/ปรับ UI
+        function checkDevice() {
+            const isMobile = window.innerWidth <= 768;
+            if (isMobile) {
+                gui.close(); // ปิดแผง GUI อัตโนมัติบนมือถือเพื่อไม่ให้บังจอ
+                if (window.innerWidth < 450) {
+                    gui.width = window.innerWidth * 0.8;
+                }
+            } else {
+                gui.open();
+                gui.width = 300;
+            }
+        }
+
+        checkDevice();
+
         function animate() {
             requestAnimationFrame(animate);
             controls.update();
@@ -244,6 +279,7 @@
             camera.aspect = window.innerWidth / window.innerHeight;
             camera.updateProjectionMatrix();
             renderer.setSize(window.innerWidth, window.innerHeight);
+            checkDevice();
         });
     </script>
 </body>
