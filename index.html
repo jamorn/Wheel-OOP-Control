@@ -200,8 +200,9 @@
             }
 
             reset() {
-                this.saveHistory();
-                this.lastCommandText = 'mesh.rotation.set(Math.PI/2, 0, 0)';
+                // รีเซ็ตค่ากลับไปเป็นสถานะเริ่มต้น (Initial State)
+                this.lastCommandText = 'mesh.rotation.x = Math.PI / 2';
+                this.prevCommandText = 'Unknown'; // กำหนดเป็น Unknown โดยตรง
                 
                 this.mesh.rotation.set(Math.PI / 2, 0, 0);
                 this.ghost.visible = false;
@@ -211,7 +212,6 @@
         }
 
         const scene = new THREE.Scene();
-        // ปรับสีพื้นหลังให้สว่างขึ้นเล็กน้อยจาก 0x050505 เป็น 0x111111 เพื่อลดคอนทราสต์ที่มืดเกินไป
         scene.background = new THREE.Color(0x111111);
         
         const camera = new THREE.PerspectiveCamera(75, window.innerWidth / window.innerHeight, 0.1, 1000);
@@ -220,7 +220,6 @@
         const renderer = new THREE.WebGLRenderer({ antialias: true });
         renderer.setSize(window.innerWidth, window.innerHeight);
         renderer.setPixelRatio(Math.min(window.devicePixelRatio, 2));
-        // เพิ่ม Exposure เพื่อความสว่างโดยรวม
         renderer.toneMapping = THREE.ReinhardToneMapping;
         renderer.toneMappingExposure = 1.2;
         document.body.appendChild(renderer.domElement);
@@ -228,32 +227,25 @@
         const controls = new OrbitControls(camera, renderer.domElement);
         controls.enableDamping = true;
         
-        // Grid
         scene.add(new THREE.GridHelper(10, 20, 0x444444, 0x222222));
 
-        // --- เพิ่มความสว่างของแสง (Lighting Update) ---
-        // 1. Ambient Light: เพิ่มจาก 0.6 เป็น 1.0 เพื่อความสว่างในเงามืด
         const ambientLight = new THREE.AmbientLight(0xffffff, 1.0);
         scene.add(ambientLight);
 
-        // 2. Main Directional Light: ปรับตำแหน่งและเพิ่มความเข้ม
         const mainLight = new THREE.DirectionalLight(0xffffff, 1.5);
         mainLight.position.set(5, 10, 7);
         scene.add(mainLight);
 
-        // 3. Fill Light: แสงเสริมจากด้านล่าง/ด้านหลังเพื่อให้เห็นขอบวัตถุชัดขึ้น
         const fillLight = new THREE.PointLight(0xffffff, 1.0);
         fillLight.position.set(-5, 2, -5);
         scene.add(fillLight);
 
-        // 4. Hemisphere Light: ช่วยให้สีสันดูเป็นธรรมชาติมากขึ้น (ท้องฟ้า/พื้นดิน)
         const hemiLight = new THREE.HemisphereLight(0xffffff, 0x444444, 0.5);
         scene.add(hemiLight);
 
         const myWheel = new Wheel(1, 0.4);
         scene.add(myWheel.group);
 
-        // --- Responsive UI Logic ---
         const gui = new GUI({ title: 'CONTROL PANEL' });
         
         const stepFolder = gui.addFolder('STEP 90 DEGREE');
