@@ -263,8 +263,79 @@
         const myWheel = new Wheel(1, 0.4);
         scene.add(myWheel.group);
 
+        // --- เพิ่มฟังก์ชัน Professional Axes ---
+        let axesGroup;
+        function setupProfessionalAxes() {
+            axesGroup = new THREE.Group();
+            const origin = new THREE.Vector3(0, 0.05, 0); // ยกขึ้นจาก Grid เล็กน้อย
+            const size = 4;
+            
+            const xColor = 0x800080; // ม่วง
+            const yColor = 0x00ff00; // เขียว
+            const zColor = 0x0000ff; // น้ำเงิน
+
+            // Arrow Helpers
+            const xArrow = new THREE.ArrowHelper(new THREE.Vector3(1, 0, 0), origin, size, xColor, 0.5, 0.2);
+            const yArrow = new THREE.ArrowHelper(new THREE.Vector3(0, 1, 0), origin, size, yColor, 0.5, 0.2);
+            const zArrow = new THREE.ArrowHelper(new THREE.Vector3(0, 0, 1), origin, size, zColor, 0.5, 0.2);
+            
+            axesGroup.add(xArrow, yArrow, zArrow);
+
+            // Sprite Labels (X, Y, Z)
+            function createLabel(text, color) {
+                const canvas = document.createElement('canvas');
+                canvas.width = 128;
+                canvas.height = 128;
+                const ctx = canvas.getContext('2d');
+                ctx.fillStyle = color;
+                ctx.font = 'bold 80px Arial';
+                ctx.textAlign = 'center';
+                ctx.textBaseline = 'middle';
+                ctx.fillText(text, 64, 64);
+                
+                const texture = new THREE.CanvasTexture(canvas);
+                const spriteMaterial = new THREE.SpriteMaterial({ map: texture, transparent: true });
+                const sprite = new THREE.Sprite(spriteMaterial);
+                sprite.scale.set(0.8, 0.8, 1);
+                return sprite;
+            }
+
+            const xLabel = createLabel('X', '#b19cd9');
+            xLabel.position.set(origin.x + size + 0.5, origin.y, origin.z);
+            
+            const yLabel = createLabel('Y', '#00ff00');
+            yLabel.position.set(origin.x, origin.y + size + 0.5, origin.z);
+            
+            const zLabel = createLabel('Z', '#0000ff');
+            zLabel.position.set(origin.x, origin.y, origin.z + size + 0.5);
+
+            axesGroup.add(xLabel, yLabel, zLabel);
+            
+            // ทำให้มองเห็นทะลุได้ (X-Ray Effect)
+            axesGroup.children.forEach(child => {
+                if(child.line) child.line.material.depthTest = false;
+                if(child.cone) child.cone.material.depthTest = false;
+                if(child.material) child.material.depthTest = false;
+                child.renderOrder = 999;
+            });
+
+            scene.add(axesGroup);
+        }
+
+        setupProfessionalAxes();
+
         const gui = new GUI({ title: 'CONTROL PANEL' });
         
+        // Settings Folder สำหรับ Toggle ต่างๆ
+        const settingsFolder = gui.addFolder('VISUAL SETTINGS');
+        const settings = {
+            showAxes: true
+        };
+        settingsFolder.add(settings, 'showAxes').name('Show X,Y,Z Axes').onChange((val) => {
+            axesGroup.visible = val;
+        });
+        settingsFolder.open();
+
         const stepFolder = gui.addFolder('STEP 90 DEGREE');
         const stepActions = {
             rollForward: () => myWheel.stepX(1),
